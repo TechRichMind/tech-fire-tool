@@ -4,8 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>科技人提早退休 (FIRE) 健保斷崖與資產提領動態模擬器</title>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js 純前端圖表庫 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Gumroad JS SDK (原頁面無縫彈窗) -->
+  <script src="https://gumroad.com/js/gumroad.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen py-10 px-4">
 
@@ -19,7 +23,7 @@
         科技人提早退休提領策略與資產耗損模擬器
       </h1>
       <p class="mt-3 text-slate-600 text-sm sm:text-base max-w-2xl mx-auto">
-        精算 50-70 歲提領順序。拖動下方滑桿即時檢驗「直覺式提領」與「ACA 優化分桶提領」在各年期的資產走勢差距。
+        精算 50-80 歲提領順序。拖動下方滑桿即時檢驗「直覺式提領」與「ACA 優化分桶提領」在各年期的資產走勢差距。
       </p>
     </div>
 
@@ -134,17 +138,22 @@
 
     </div>
 
-    <!-- Bottom Conversion Hook -->
+    <!-- Bottom Conversion Hook (已串接 Gumroad 彈窗與升級文案) -->
     <div class="bg-slate-900 text-white rounded-3xl p-8 text-center shadow-lg">
-      <h3 class="text-xl font-bold mb-2">想了解如何落地你的專屬提領順序？</h3>
-      <p class="text-slate-400 text-xs sm:text-sm mb-6 max-w-lg mx-auto">
-        包括 50-70 歲逐年 Roth Conversion 梯子排程、應稅帳戶避稅賣出策略，以及各階段 MAGI 甜蜜點對照表。
+      <h3 class="text-xl font-bold mb-2">需要這套提領策略的完整實戰模型？</h3>
+      <p class="text-slate-400 text-xs sm:text-sm mb-6 max-w-xl mx-auto leading-relaxed">
+        包含 55-80 歲逐年分桶排程、三桶（401k/Brokerage/Roth）獨立年化資產增長與水位監控、70 歲社安金 85% 稅務連動，以及 75 歲 SECURE 2.0 RMD 避坑模型。
       </p>
-      <div class="flex flex-col sm:flex-row justify-center gap-3">
-        <a href="#download" onclick="alert('點擊已記錄（無收集個資）。正式版中將引導至 Excel 排程範本下載頁面。')" class="bg-white hover:bg-slate-100 text-slate-900 text-xs font-semibold py-3.5 px-6 rounded-xl transition shadow">
-          下載《提早退休逐年提領排程 Excel 範本》($29)
+      <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+        <!-- Gumroad 彈窗按鈕 -->
+        <a 
+          class="gumroad-button bg-white hover:bg-slate-100 text-slate-900 text-xs font-semibold py-3.5 px-6 rounded-xl transition shadow inline-block" 
+          href="https://gumroad.com/l/fire-v6-excel" 
+          data-gumroad-single-product="true"
+          target="_blank">
+          下載《提早退休逐年提領排程 Excel 旗艦範本 v6》($29)
         </a>
-        <a href="#consult" onclick="alert('點擊已記錄（無收集個資）。正式版中將開啟預約諮詢日曆。')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-3.5 px-6 rounded-xl transition shadow">
+        <a href="mailto:bdfangok@gmail.com?subject=預約提早退休提領架構診斷諮詢" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-3.5 px-6 rounded-xl transition shadow inline-block">
           預約 1 對 1 架構診斷諮詢
         </a>
       </div>
@@ -156,7 +165,7 @@
     let fireChart;
 
     function formatCurrency(val) {
-      if (val >= 1000000) return '$' + (val / 1000000).toFixed(1) + 'M';
+      if (val >= 1000000) return '$' + (val / 1000000).toFixed(2) + 'M';
       if (val >= 1000) return '$' + Math.round(val / 1000) + 'K';
       return '$' + Math.round(val).toLocaleString();
     }
@@ -226,7 +235,7 @@
       document.getElementById('stat-naive').innerText = formatCurrency(naiveData[naiveData.length - 1]);
       document.getElementById('stat-optimized').innerText = formatCurrency(optimizedData[optimizedData.length - 1]);
 
-      // 核心算法：以 portfolio 為基準計算上下對稱距離，鎖定起始點在垂直正中心
+      // 錨定起始點在垂直正中央
       const allValues = [...naiveData, ...optimizedData];
       const maxVal = Math.max(...allValues);
       const minVal = Math.min(...allValues);
@@ -302,13 +311,7 @@
               max: yMax,
               ticks: {
                 callback: function(value) {
-                  if (value >= 1000000) {
-                    return '$' + (value / 1000000).toFixed(2) + 'M';
-                  }
-                  if (value >= 1000) {
-                    return '$' + Math.round(value / 1000) + 'K';
-                  }
-                  return '$' + Math.round(value);
+                  return formatCurrency(value);
                 }
               },
               grid: {
