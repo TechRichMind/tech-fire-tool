@@ -3,93 +3,258 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>科技人提早退休 (FIRE) 健保斷崖與提領優化試算器</title>
+  <title>科技人提早退休 (FIRE) 健保斷崖與資產提領動態模擬器</title>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js 輕量開源圖表庫 (CDN 純前端運行) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
+<body class="bg-slate-50 text-slate-800 min-h-screen py-10 px-4">
 
-  <div class="max-w-3xl mx-auto px-4 py-10">
+  <div class="max-w-4xl mx-auto">
     <!-- Header -->
     <div class="text-center mb-8">
       <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 mb-3">
-        🔒 零隱私疑慮：純本地端運算 (Client-Side Only)，不設資料庫
+        🔒 零隱私疑慮：純瀏覽器端即時運算 (Client-Side Only)，不設任何伺服器資料庫
       </span>
-      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-        科技人提早退休稅務與 ACA 健保斷崖試算器
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+        科技人提早退休提領策略與資產耗損模擬器
       </h1>
-      <p class="mt-3 text-slate-600 text-sm sm:text-base">
-        精算 50-65 歲提領順序。避開 10% 提早提領罰金與 ACA 健保補助斷崖，測試你的現金流配置能省下多少錢。
+      <p class="mt-3 text-slate-600 text-sm sm:text-base max-w-2xl mx-auto">
+        精算 50-65 歲提領順序。拖動下方滑桿即時檢驗「直覺式提領」與「ACA 優化分桶提領」在 10 年間的資產走勢差距。
       </p>
     </div>
 
-    <!-- Interactive Card -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-8">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-        <div>
-          <label class="block text-xs font-medium text-slate-700 mb-1">退休初期總流動資產 ($)</label>
-          <input type="number" id="portfolio" value="1500000" step="50000" class="w-full border-slate-300 rounded-lg p-2.5 text-slate-900 border focus:ring-2 focus:ring-indigo-500 text-sm">
+    <!-- Main Card -->
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-10 mb-8">
+      
+      <!-- Top Metric Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-8 mb-8 border-b border-slate-100 text-center">
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+          <div class="text-xs font-semibold text-slate-500 mb-1">退休初期總資產</div>
+          <div id="stat-initial" class="text-2xl font-black text-slate-800">$1.5M</div>
         </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-700 mb-1">目標每年生活開銷支出 ($)</label>
-          <input type="number" id="spending" value="100000" step="5000" class="w-full border-slate-300 rounded-lg p-2.5 text-slate-900 border focus:ring-2 focus:ring-indigo-500 text-sm">
+        <div class="p-4 rounded-2xl bg-rose-50 border border-rose-100">
+          <div class="text-xs font-semibold text-rose-600 mb-1">直覺提領期末剩餘資產</div>
+          <div id="stat-naive" class="text-2xl font-black text-rose-700">$1.7M</div>
+          <div class="text-[10px] text-rose-500 mt-1">高保費 + MAGI 稅負耗損</div>
+        </div>
+        <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
+          <div class="text-xs font-semibold text-emerald-600 mb-1">優化提領期末剩餘資產</div>
+          <div id="stat-optimized" class="text-2xl font-black text-emerald-700">$1.9M</div>
+          <div class="text-[10px] text-emerald-600 mt-1">ACA 補助最大化 + 分桶免罰</div>
         </div>
       </div>
 
-      <button onclick="calculate()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition duration-150 text-sm shadow-sm">
-        即時情境壓力測試
-      </button>
+      <!-- Chart Container -->
+      <div class="relative w-full h-[320px] sm:h-[380px] mb-8">
+        <canvas id="fireChart"></canvas>
+      </div>
 
-      <!-- Output Results -->
-      <div id="results" class="mt-8 border-t border-slate-100 pt-6">
-        <h3 class="text-sm font-semibold text-slate-800 mb-4">10 年提領成本與資產對比 (55-65 歲)</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div class="p-4 rounded-xl bg-rose-50 border border-rose-100">
-            <span class="text-xs text-rose-600 font-semibold block mb-1">情境 A：直覺式提領 (全額 401k)</span>
-            <p class="text-slate-600 text-xs mb-2">MAGI 超標導致 ACA 健保無補助 + 潛在提早提領罰金。</p>
-            <div class="text-lg font-bold text-rose-700" id="costA">年耗損額外負擔: ~$22,000</div>
+      <!-- Sliders Control Panel -->
+      <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+        <h3 class="text-sm font-bold text-slate-800 mb-6 flex items-center gap-2">
+          <span>⚙️</span> 調整財務與提領參數（即時連動圖表）
+        </h3>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <!-- Slider 1 -->
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <label class="text-xs font-medium text-slate-600">退休初期資產總額</label>
+              <span id="label-portfolio" class="text-xs font-bold bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-indigo-600">$1,500,000</span>
+            </div>
+            <input type="range" id="param-portfolio" min="500000" max="4000000" step="50000" value="1500000" 
+              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
           </div>
-          <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-100">
-            <span class="text-xs text-emerald-600 font-semibold block mb-1">情境 B：優化分桶提領 (ACA 最佳化)</span>
-            <p class="text-slate-600 text-xs mb-2">控制 MAGI 享受高額 Silver Plan 補助，差額由免稅池補足。</p>
-            <div class="text-lg font-bold text-emerald-700" id="costB">年健保自付額: ~$3,500</div>
+
+          <!-- Slider 2 -->
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <label class="text-xs font-medium text-slate-600">年生活費用需求</label>
+              <span id="label-spending" class="text-xs font-bold bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-indigo-600">$70,000</span>
+            </div>
+            <input type="range" id="param-spending" min="40000" max="200000" step="5000" value="70000" 
+              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+          </div>
+
+          <!-- Slider 3 -->
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <label class="text-xs font-medium text-slate-600">資產年化報酬率 (%)</label>
+              <span id="label-return" class="text-xs font-bold bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-indigo-600">7.0%</span>
+            </div>
+            <input type="range" id="param-return" min="0" max="10" step="0.5" value="7" 
+              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+          </div>
+
+          <!-- Slider 4 -->
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <label class="text-xs font-medium text-slate-600">模擬年期 (55-65歲)</label>
+              <span id="label-years" class="text-xs font-bold bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-indigo-600">10 年</span>
+            </div>
+            <input type="range" id="param-years" min="5" max="15" step="1" value="10" 
+              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
           </div>
         </div>
-        <div class="mt-4 p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-center">
-          <span class="text-xs text-indigo-700 font-medium block">10 年累積預估省下稅費與健保支出</span>
-          <span class="text-2xl font-black text-indigo-900" id="savings">$185,000+</span>
+
+        <div class="text-[11px] text-slate-400 mt-5 leading-relaxed">
+          *註：直覺提領模擬全額由 Traditional 401(k) 支出，高 MAGI 導致 ACA 零補助（自付年保費約 $22,000）；優化提領採用分桶策略，控制 MAGI 領取高額銀卡補貼（自付保費約 $3,500）。
         </div>
       </div>
+
     </div>
 
-    <!-- Conversion Hook (Action Area) -->
-    <div class="bg-slate-900 text-white rounded-2xl p-6 sm:p-8 text-center">
-      <h3 class="text-lg font-bold mb-2">需要這套提領策略的具體落地步驟？</h3>
+    <!-- Bottom Conversion Hook -->
+    <div class="bg-slate-900 text-white rounded-3xl p-8 text-center shadow-lg">
+      <h3 class="text-xl font-bold mb-2">想了解如何落地你的專屬提領順序？</h3>
       <p class="text-slate-400 text-xs sm:text-sm mb-6 max-w-lg mx-auto">
-        包含 50-65 歲逐年 Roth Conversion 階梯金額、各帳戶提領優先序，以及符合 IRS 規範的免罰排程表。
+        包括 50-65 歲逐年 Roth Conversion 梯子排程、應稅帳戶避稅賣出策略，以及各階段 MAGI 甜蜜點對照表。
       </p>
       <div class="flex flex-col sm:flex-row justify-center gap-3">
-        <a href="#download" onclick="trackLead('excel_template')" class="bg-white hover:bg-slate-100 text-slate-900 text-xs font-semibold py-3 px-6 rounded-lg transition">
+        <a href="#download" onclick="alert('點擊已記錄（無收集個資）。正式版中將引導至 Excel 排程範本下載頁面。')" class="bg-white hover:bg-slate-100 text-slate-900 text-xs font-semibold py-3.5 px-6 rounded-xl transition shadow">
           下載《提早退休逐年提領排程 Excel 範本》($29)
         </a>
-        <a href="#consult" onclick="trackLead('consultation')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-3 px-6 rounded-lg transition">
-          預約 1 對 1 提領架構診斷
+        <a href="#consult" onclick="alert('點擊已記錄（無收集個資）。正式版中將開啟預約諮詢日曆。')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-3.5 px-6 rounded-xl transition shadow">
+          預約 1 對 1 架構診斷諮詢
         </a>
       </div>
     </div>
   </div>
 
   <script>
-    function calculate() {
-      const spending = parseFloat(document.getElementById('spending').value) || 100000;
-      // 每年在 ACA 補助斷崖與自付額的保守差額
-      const annualGap = 18500;
-      const tenYearSavings = annualGap * 10;
-      document.getElementById('savings').innerText = '$' + tenYearSavings.toLocaleString();
+    // 初始化 Chart.js
+    const ctx = document.getElementById('fireChart').getContext('2d');
+    let fireChart;
+
+    function formatCurrency(val) {
+      if (val >= 1000000) return '$' + (val / 1000000).toFixed(1) + 'M';
+      if (val >= 1000) return '$' + Math.round(val / 1000) + 'K';
+      return '$' + Math.round(val).toLocaleString();
     }
-    function trackLead(actionType) {
-      console.log('User Action Clicked (No Private Data Logged):', actionType);
-      alert('已記錄操作意向。此處在正式版中將跳轉至 Stripe 購買頁面或預約日曆。');
+
+    function calculateData() {
+      const portfolio = parseFloat(document.getElementById('param-portfolio').value);
+      const spending = parseFloat(document.getElementById('param-spending').value);
+      const r = parseFloat(document.getElementById('param-return').value) / 100;
+      const years = parseInt(document.getElementById('param-years').value);
+
+      // 更新 Slider 數值文字
+      document.getElementById('label-portfolio').innerText = '$' + portfolio.toLocaleString();
+      document.getElementById('label-spending').innerText = '$' + spending.toLocaleString();
+      document.getElementById('label-return').innerText = (r * 100).toFixed(1) + '%';
+      document.getElementById('label-years').innerText = years + ' 年';
+      document.getElementById('stat-initial').innerText = formatCurrency(portfolio);
+
+      const labels = [];
+      const naiveData = [];
+      const optimizedData = [];
+
+      for (let t = 0; t <= years; t++) {
+        labels.push(t + ' 年');
+
+        let naiveBal = 0;
+        let optBal = 0;
+
+        if (r > 0) {
+          const factor = Math.pow(1 + r, t);
+          const annuityFactor = (factor - 1) / r;
+          naiveBal = Math.max(0, portfolio * factor - (spending + 22000) * annuityFactor);
+          optBal = Math.max(0, portfolio * factor - (spending + 3500) * annuityFactor);
+        } else {
+          naiveBal = Math.max(0, portfolio - (spending + 22000) * t);
+          optBal = Math.max(0, portfolio - (spending + 3500) * t);
+        }
+
+        naiveData.push(Math.round(naiveBal));
+        optimizedData.push(Math.round(optBal));
+      }
+
+      // 更新指標卡片
+      document.getElementById('stat-naive').innerText = formatCurrency(naiveData[naiveData.length - 1]);
+      document.getElementById('stat-optimized').innerText = formatCurrency(optimizedData[optimizedData.length - 1]);
+
+      return { labels, naiveData, optimizedData };
     }
+
+    function renderChart() {
+      const { labels, naiveData, optimizedData } = calculateData();
+
+      if (fireChart) {
+        fireChart.data.labels = labels;
+        fireChart.data.datasets[0].data = naiveData;
+        fireChart.data.datasets[1].data = optimizedData;
+        fireChart.update();
+        return;
+      }
+
+      fireChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '直覺提領 (高保費+稅負)',
+              data: naiveData,
+              borderColor: '#f43f5e',
+              backgroundColor: 'rgba(244, 63, 94, 0.05)',
+              borderWidth: 2.5,
+              tension: 0.25,
+              fill: false
+            },
+            {
+              label: '優化分桶提領 (ACA補助最大化)',
+              data: optimizedData,
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              borderWidth: 2.5,
+              tension: 0.25,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 12, font: { size: 12 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': $' + context.raw.toLocaleString();
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: {
+                callback: function(value) {
+                  return formatCurrency(value);
+                }
+              },
+              grid: { color: '#f1f5f9' }
+            },
+            x: {
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    // 監聽所有滑桿事件
+    ['param-portfolio', 'param-spending', 'param-return', 'param-years'].forEach(id => {
+      document.getElementById(id).addEventListener('input', renderChart);
+    });
+
+    // 初始渲染
+    window.onload = renderChart;
   </script>
 </body>
 </html>
