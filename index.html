@@ -8,8 +8,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js 純前端圖表庫 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Gumroad JS SDK (原頁面無縫彈窗) -->
-  <script src="https://gumroad.com/js/gumroad.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen py-10 px-4">
 
@@ -138,20 +136,23 @@
 
     </div>
 
-    <!-- Bottom Conversion Hook (已串接 Gumroad 彈窗與升級文案) -->
+    <!-- Bottom Conversion Hook (穩定新分頁結帳模式) -->
     <div class="bg-slate-900 text-white rounded-3xl p-8 text-center shadow-lg">
       <h3 class="text-xl font-bold mb-2">需要這套提領策略的完整實戰模型？</h3>
       <p class="text-slate-400 text-xs sm:text-sm mb-6 max-w-xl mx-auto leading-relaxed">
         包含 55-80 歲逐年分桶排程、三桶（401k/Brokerage/Roth）獨立年化資產增長與水位監控、70 歲社安金 85% 稅務連動，以及 75 歲 SECURE 2.0 RMD 避坑模型。
       </p>
       <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
-        <!-- Gumroad 彈窗按鈕 -->
+        <!-- 穩定直達新分頁按鈕（絕不卡轉圈） -->
         <a 
-          class="gumroad-button bg-white hover:bg-slate-100 text-slate-900 text-xs font-semibold py-3.5 px-6 rounded-xl transition shadow inline-block" 
-          href="https://gumroad.com/l/fire-v6-excel" 
-          data-gumroad-single-product="true"
-          target="_blank">
-          下載《提早退休逐年提領排程 Excel 旗艦範本 v6》($29)
+          href="https://bdfangok.gumroad.com/l/fire-v6-excel" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="bg-white hover:bg-slate-100 text-slate-900 text-xs font-semibold py-3.5 px-6 rounded-xl transition shadow inline-flex items-center gap-1.5">
+          <span>下載《提早退休逐年提領排程 Excel 旗艦範本 v6》($29)</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
         </a>
         <a href="mailto:bdfangok@gmail.com?subject=預約提早退休提領架構診斷諮詢" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-3.5 px-6 rounded-xl transition shadow inline-block">
           預約 1 對 1 架構診斷諮詢
@@ -235,7 +236,6 @@
       document.getElementById('stat-naive').innerText = formatCurrency(naiveData[naiveData.length - 1]);
       document.getElementById('stat-optimized').innerText = formatCurrency(optimizedData[optimizedData.length - 1]);
 
-      // 錨定起始點在垂直正中央
       const allValues = [...naiveData, ...optimizedData];
       const maxVal = Math.max(...allValues);
       const minVal = Math.min(...allValues);
@@ -311,7 +311,13 @@
               max: yMax,
               ticks: {
                 callback: function(value) {
-                  return formatCurrency(value);
+                  if (value >= 1000000) {
+                    return '$' + (value / 1000000).toFixed(2) + 'M';
+                  }
+                  if (value >= 1000) {
+                    return '$' + Math.round(value / 1000) + 'K';
+                  }
+                  return '$' + Math.round(value);
                 }
               },
               grid: {
