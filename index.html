@@ -6,7 +6,7 @@
   <title>科技人提早退休 (FIRE) 健保斷崖與資產提領動態模擬器</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js 輕量開源圖表庫 (CDN 純前端運行) -->
+  <!-- Chart.js 純前端圖表庫 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen py-10 px-4">
@@ -21,7 +21,7 @@
         科技人提早退休提領策略與資產耗損模擬器
       </h1>
       <p class="mt-3 text-slate-600 text-sm sm:text-base max-w-2xl mx-auto">
-        精算 50-65 歲提領順序。拖動下方滑桿即時檢驗「直覺式提領」與「ACA 優化分桶提領」在 10 年間的資產走勢差距。
+        精算 50-70 歲提領順序。拖動下方滑桿即時檢驗「直覺式提領」與「ACA 優化分桶提領」在各年期的資產走勢差距。
       </p>
     </div>
 
@@ -47,14 +47,14 @@
       </div>
 
       <!-- Chart Container -->
-      <div class="relative w-full h-[320px] sm:h-[380px] mb-8">
+      <div class="relative w-full h-[300px] sm:h-[360px] mb-8">
         <canvas id="fireChart"></canvas>
       </div>
 
       <!-- Sliders Control Panel -->
-      <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+      <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 mb-8">
         <h3 class="text-sm font-bold text-slate-800 mb-6 flex items-center gap-2">
-          <span>⚙️</span> 調整財務與提領參數（即時連動圖表）
+          <span>⚙️</span> 調整財務與提領參數（即時連動圖表與成本）
         </h3>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -91,8 +91,8 @@
           <!-- Slider 4 -->
           <div>
             <div class="flex justify-between items-center mb-2">
-              <label class="text-xs font-medium text-slate-600">模擬年期 (55-65歲)</label>
-              <span id="label-years" class="text-xs font-bold bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-indigo-600">10 年</span>
+              <label class="text-xs font-medium text-slate-600">提早退休模擬年期 (55 歲起算)</label>
+              <span id="label-years" class="text-xs font-bold bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-indigo-600">10 年 (至 65 歲)</span>
             </div>
             <input type="range" id="param-years" min="5" max="15" step="1" value="10" 
               class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
@@ -104,13 +104,43 @@
         </div>
       </div>
 
+      <!-- Comparison Cards (動態對比卡片區塊) -->
+      <div class="border-t border-slate-100 pt-8">
+        <h3 id="comparison-title" class="text-sm font-bold text-slate-800 mb-4">
+          10 年提領成本與資產對比 (55-65 歲)
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-4">
+          <div class="p-5 rounded-2xl bg-rose-50 border border-rose-100">
+            <span class="text-xs text-rose-600 font-semibold block mb-1">情境 A：直覺式提領 (全額 401k)</span>
+            <p id="desc-naive" class="text-slate-600 text-xs mb-3 leading-relaxed">
+              MAGI 超標導致 ACA 健保無補助 + 潛在提早提領罰金。
+            </p>
+            <div class="text-lg font-bold text-rose-700">年耗損額外負擔: ~$22,000</div>
+          </div>
+          <div class="p-5 rounded-2xl bg-emerald-50 border border-emerald-100">
+            <span class="text-xs text-emerald-600 font-semibold block mb-1">情境 B：優化分桶提領 (ACA 最佳化)</span>
+            <p id="desc-optimized" class="text-slate-600 text-xs mb-3 leading-relaxed">
+              控制 MAGI 享受高額 Silver Plan 補助，差額由免稅池補足。
+            </p>
+            <div class="text-lg font-bold text-emerald-700">年健保自付額: ~$3,500</div>
+          </div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-indigo-50 border border-indigo-100 text-center">
+          <span id="savings-title" class="text-xs text-indigo-700 font-medium block mb-1">
+            10 年累積預估省下稅費與健保支出
+          </span>
+          <span class="text-3xl font-black text-indigo-900" id="total-savings">$185,000</span>
+        </div>
+      </div>
+
     </div>
 
     <!-- Bottom Conversion Hook -->
     <div class="bg-slate-900 text-white rounded-3xl p-8 text-center shadow-lg">
       <h3 class="text-xl font-bold mb-2">想了解如何落地你的專屬提領順序？</h3>
       <p class="text-slate-400 text-xs sm:text-sm mb-6 max-w-lg mx-auto">
-        包括 50-65 歲逐年 Roth Conversion 梯子排程、應稅帳戶避稅賣出策略，以及各階段 MAGI 甜蜜點對照表。
+        包括 50-70 歲逐年 Roth Conversion 梯子排程、應稅帳戶避稅賣出策略，以及各階段 MAGI 甜蜜點對照表。
       </p>
       <div class="flex flex-col sm:flex-row justify-center gap-3">
         <a href="#download" onclick="alert('點擊已記錄（無收集個資）。正式版中將引導至 Excel 排程範本下載頁面。')" class="bg-white hover:bg-slate-100 text-slate-900 text-xs font-semibold py-3.5 px-6 rounded-xl transition shadow">
@@ -124,7 +154,6 @@
   </div>
 
   <script>
-    // 初始化 Chart.js
     const ctx = document.getElementById('fireChart').getContext('2d');
     let fireChart;
 
@@ -140,19 +169,47 @@
       const r = parseFloat(document.getElementById('param-return').value) / 100;
       const years = parseInt(document.getElementById('param-years').value);
 
-      // 更新 Slider 數值文字
+      const startAge = 55;
+      const endAge = startAge + years;
+
+      // 更新 Slider 數值文字與年齡連動標籤
       document.getElementById('label-portfolio').innerText = '$' + portfolio.toLocaleString();
       document.getElementById('label-spending').innerText = '$' + spending.toLocaleString();
       document.getElementById('label-return').innerText = (r * 100).toFixed(1) + '%';
-      document.getElementById('label-years').innerText = years + ' 年';
+      
+      let ageNote = '';
+      if (endAge === 65) {
+        ageNote = ' (至 65 歲 · 銜接 Medicare)';
+      } else if (endAge > 65) {
+        ageNote = ` (至 ${endAge} 歲 · 含 Medicare/社安金過渡期)`;
+      } else {
+        ageNote = ` (至 ${endAge} 歲)`;
+      }
+      document.getElementById('label-years').innerText = `${years} 年${ageNote}`;
       document.getElementById('stat-initial').innerText = formatCurrency(portfolio);
+
+      // 動態更新對比卡片區塊標題與描述
+      document.getElementById('comparison-title').innerText = `${years} 年提領成本與資產對比 (55-${endAge} 歲)`;
+      document.getElementById('savings-title').innerText = `${years} 年累積預估省下稅費與健保支出`;
+
+      if (endAge > 65) {
+        document.getElementById('desc-naive').innerText = '65歲前因MAGI超標失去ACA補助；65歲後因所得過高面臨 Medicare Part B/D (IRMAA) 階梯加成。';
+        document.getElementById('desc-optimized').innerText = '65歲前領取高額ACA補助；65歲後平滑控制應稅所得，避開 IRMAA 懲罰線並最大化資產續航。';
+      } else {
+        document.getElementById('desc-naive').innerText = 'MAGI 超標導致 ACA 健保無補助 + 潛在提早提領罰金。';
+        document.getElementById('desc-optimized').innerText = '控制 MAGI 享受高額 Silver Plan 補助，差額由免稅池補足。';
+      }
+
+      // 每年差額約 $18,500
+      const totalSavings = 18500 * years;
+      document.getElementById('total-savings').innerText = '$' + totalSavings.toLocaleString();
 
       const labels = [];
       const naiveData = [];
       const optimizedData = [];
 
       for (let t = 0; t <= years; t++) {
-        labels.push(t + ' 年');
+        labels.push(`${t}年 (${startAge + t}歲)`);
 
         let naiveBal = 0;
         let optBal = 0;
@@ -248,12 +305,10 @@
       });
     }
 
-    // 監聽所有滑桿事件
     ['param-portfolio', 'param-spending', 'param-return', 'param-years'].forEach(id => {
       document.getElementById(id).addEventListener('input', renderChart);
     });
 
-    // 初始渲染
     window.onload = renderChart;
   </script>
 </body>
